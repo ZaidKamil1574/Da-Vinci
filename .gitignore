@@ -112,3 +112,14 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# macOS Finder metadata
+.DS_Store
+
+# Written next to a player build by Unity; never part of the project
+*_BackUpThisFolder_ButDontShipItWithYourGame/
+*_BurstDebugInformation_DoNotShip/
+
+# Post Processing Stack v2, parked here because it is Built-in-pipeline only and
+# will not compile against URP. Unity already ignores folders ending in ~.
+Assets/Hospital Room 2/PostProcessing~/
