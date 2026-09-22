@@ -259,7 +259,7 @@ PlayerSettings:
   shaderPrecisionModel: 0
   clonedFromGUID: f9aa94d3cea2f4d49b4b8ea6ba3f701b
   templatePackageId: com.unity.template.vr-multiplayer@2.2.1
-  templateDefaultScene: Assets/Scenes/SampleScene.unity
+  templateDefaultScene: Assets/Scenes/DaVinci.unity
   useCustomMainManifest: 0
   useCustomLauncherManifest: 0
   useCustomMainGradleTemplate: 0

@@ -1026,7 +1026,7 @@ Preset:
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: templateDefaultScene
-    value: Assets/Scenes/SampleScene.unity
+    value: Assets/Scenes/DaVinci.unity
     objectReference: {fileID: 0}
   - target: {fileID: 0}
     propertyPath: useCustomMainManifest

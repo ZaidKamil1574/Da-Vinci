@@ -25,8 +25,12 @@ You stand in a hospital room next to a patient in bed. You can move the robot's 
    If the first import stops moving for more than 10 minutes, force-quit Unity and open the project again. It continues where it left off, so nothing is lost.
    - **Mac:** press **⌘ Option Esc**, select **Unity**, then click **Force Quit**.
    - **Windows:** press **Ctrl + Shift + Esc**, select **Unity**, then click **End task**.
-6. In the **Project** window, go to **Assets › Scenes** and double-click **SampleScene**.
+6. In the **Project** window, go to **Assets › Scenes** and double-click the **DaVinci** scene.
 7. Press **Play**.
+
+When the **DaVinci** scene is open, Unity should look like this:
+
+![The DaVinci scene open in Unity, with the Project window showing Assets › Scenes](images/scene-view.png)
 
 **Using a Quest?** Connect it to your computer with Quest Link before you press Play.
 
@@ -141,7 +145,7 @@ Assets/
 ├── DaVinci/
 │   ├── Scripts/        all of my code
 │   └── Generated/      the patient animations and the endoscope texture
-├── Scenes/SampleScene.unity
+├── Scenes/DaVinci.unity   the main scene
 ├── Hospital Room 2/    the hospital room
 ├── VR Body/            the patient characters
 ├── Da+Vinci.fbx        the robot
