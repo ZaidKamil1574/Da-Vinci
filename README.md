@@ -21,6 +21,10 @@ You stand in a hospital room next to a patient in bed. You can move the robot's 
 3. Open **Unity Hub**, click **Add**, then **Add project from disk**.
 4. Choose the **Da-Vinci-main** folder.
 5. Click the project in Unity Hub to open it. The first time takes several minutes while Unity imports everything.
+
+   If the first import stops moving for more than 10 minutes, force-quit Unity and open the project again. It continues where it left off, so nothing is lost.
+   - **Mac:** press **⌘ Option Esc**, select **Unity**, then click **Force Quit**.
+   - **Windows:** press **Ctrl + Shift + Esc**, select **Unity**, then click **End task**.
 6. In the **Project** window, go to **Assets › Scenes** and double-click **SampleScene**.
 7. Press **Play**.
 
