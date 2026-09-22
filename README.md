@@ -1,6 +1,6 @@
 # Da Vinci Surgical Robot — VR Trainer
 
-A multiplayer virtual-reality simulator of a da Vinci–style robotic surgical system, built in Unity 6 for Meta Quest. Trainees stand in a hospital room beside a patient on the bed, drive the robot's instrument arms by hand and from the surgeon console, watch a live endoscopic feed, swap instruments at the arm tip, and see every joint's motion charted in real time.
+A multiplayer virtual-reality simulator of a da Vinci robotic surgical system, built in Unity 6 for Meta Quest. The user can stand in a hospital room beside a patient on the bed, drive the robot's instrument arms by hand and from the surgeon console, watch a live endoscopic feed, swap instruments at the arm tip, and see every joint's motion charted in real time. This application is to showcase Kinematics with Unity Physics.
 
 **Unity 6000.4.0f1** · URP 17.4 · OpenXR · XR Interaction Toolkit 3.4 · Animation Rigging 1.4 · Netcode for GameObjects 2.10
 
