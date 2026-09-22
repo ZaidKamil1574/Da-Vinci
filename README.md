@@ -27,6 +27,8 @@ A multiplayer virtual-reality simulator of a da Vinci–style robotic surgical s
 
 Each instrument arm is a chain of joints solved by an Animation Rigging `ChainIKConstraint`. The constraint's target is a grabbable, networked ball floating in world space; the solver reads that ball's position every frame and rotates each joint, from the rotary base out to the tip, to bring the instrument to it. Because the solver only ever produces rotations, link lengths hold by construction — nothing stretches.
 
+![Target ball IK goal tracking and FABRIK chain solving across the arm's joints](images/target-ball-ik.png)
+
 - **Console driving** — `DaVinciArmConsole` moves an arm's IK target from the console controls, and steps aside the moment someone grabs the target directly, so the hand and the console never fight over it.
 - **Reset** — `NetworkedPoseReset` returns a target ball to its starting point, which walks its arm home with it.
 - **Pause** — `DaVinciPauseControl` freezes the machine and everything reading from it on a controller button.
@@ -34,6 +36,8 @@ Each instrument arm is a chain of joints solved by an Animation Rigging `ChainIK
 ### Console levers and dial
 
 The two control types are deliberately different, because they mean different things:
+
+![Lever rate control versus dial position control on the surgeon console](images/input-control.png)
 
 - **Lever — rate control** (`LeverDrivenRotator`). A lever names a *direction*. The joint travels toward that end at a fixed speed and stops at its limit. It holds position whenever the lever isn't being held, so an arm can be parked mid-travel.
 - **Dial — position control** (`KnobDrivenRotator`). A dial names an *angle*. Its value maps straight onto the joint's rotation.
@@ -44,6 +48,8 @@ Neither contains networking code. The networked lever and dial already replicate
 
 A camera is parented to the instrument tip and renders into a RenderTexture that a monitor in front of the surgeon console displays (`EndoscopeCamera`).
 
+![Endoscope camera on the arm tip streaming to the console monitor](images/endoscopic-view.png)
+
 - A 5 mm near clip — a real endoscope works centimetres from tissue.
 - Single-eye rendering, so the feed isn't drawn twice for VR.
 - The monitor lives on the UI layer, which the endoscope doesn't render — otherwise the camera would film its own screen.
@@ -52,6 +58,8 @@ A camera is parented to the instrument tip and renders into a RenderTexture that
 ### Instrument swapping
 
 The arm tip carries a coupling built on XR Interaction Toolkit's `XRSocketInteractor` (`DaVinciInstrumentMount`). It accepts only objects marked as surgical instruments (`DaVinciInstrument`) and ignores everything else in the room. The socket holds the actual tool — nothing is destroyed or spawned — and the arm's fixed forceps is hidden while a tool is seated. Each tool seats by a mount point at its handle end; tools that miss the coupling fall under gravity.
+
+![Instrument tray with modular coupling at the arm tip](images/tool-swapping.png)
 
 ### Telemetry and visualisation
 
@@ -64,6 +72,8 @@ The arm tip carries a coupling built on XR Interaction Toolkit's `XRSocketIntera
 ### Patient
 
 The patient moves between two authored poses — asleep, and sitting up in bed — through an Animator crossfade (`HumanoidPoseLibrary`), driven by the Resting and Wake Up buttons on the bedside panel. Each hand can be grabbed and repositioned: a `TwoBoneIKConstraint` bends the shoulder and elbow to follow, so the mesh doesn't stretch (`GrabbableLimbIK`). The constraint only engages while a hand is held, leaving the pose animation in charge the rest of the time.
+
+![Patient sleep-to-awake pose transition and grabbable limb IK](images/patient-ik.png)
 
 ### Environment
 

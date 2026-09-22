@@ -169,3 +169,8 @@ Packages/packages-lock.json linguist-generated
 
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary
+
+# README screenshots are shown on every view of the repository page. They are
+# small, so they are stored as ordinary git files rather than through LFS, which
+# keeps viewing the README from counting against LFS bandwidth.
+images/*.png -filter -diff -merge -text
