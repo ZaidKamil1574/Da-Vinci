@@ -1,189 +1,184 @@
-# Da Vinci Surgical Robot — VR Trainer
+# Da Vinci Surgical Robot VR Trainer
 
-A multiplayer virtual-reality simulator of a da Vinci robotic surgical system, built in Unity 6 for Meta Quest. The user can stand in a hospital room beside a patient on the bed, drive the robot's instrument arms by hand and from the surgeon console, watch a live endoscopic feed, swap instruments at the arm tip, and see every joint's motion charted in real time. This application is to showcase Kinematics with Unity Physics.
+A virtual reality training simulator for a da Vinci surgical robot, built in Unity 6 for the Meta Quest.
 
-**Unity 6000.4.0f1** · URP 17.4 · OpenXR · XR Interaction Toolkit 3.4 · Animation Rigging 1.4 · Netcode for GameObjects 2.10
-
----
-
-## What you can do in the headset
-
-| | |
-|---|---|
-| **Drive the arms** | Grab a target ball and the instrument arm reaches for it, joint by joint. |
-| **Use the console** | Levers drive joints at a controlled rate; a dial aims a joint directly. Let go and the arm holds its position. |
-| **See through the instrument** | A camera on the arm tip streams a live endoscopic view to a monitor at the surgeon console. |
-| **Swap instruments** | Pick tweezers, clamps or a scalpel off the tray and seat it on the arm tip; it snaps into place and follows the arm. |
-| **Watch the telemetry** | Live speed-over-time and distance-over-time charts for each arm, colour-matched to angle overlays on the joints themselves. |
-| **Wake the patient** | One button moves the patient from asleep on the bed to sitting up, with an animated transition. Their hands can be grabbed and repositioned. |
-| **Train together** | Several people share the room over the network, built on Unity's VR Multiplayer template. |
-| **Freeze everything** | The **A** button pauses the machine and the charts together, to discuss a pose. |
+You stand in a hospital room next to a patient in bed. You can move the robot's arms by hand or from the surgeon's console, look through a camera mounted on one of the instruments, and swap surgical tools on the end of an arm. Several people can join the same room. This application is to showcase Kinematics with Unity Physics.
 
 ---
 
-## Features in detail
+## Open the project in Unity
 
-### Robotic arms and inverse kinematics
+**You'll need**
 
-Each instrument arm is a chain of joints solved by an Animation Rigging `ChainIKConstraint`. The constraint's target is a grabbable, networked ball floating in world space; the solver reads that ball's position every frame and rotates each joint, from the rotary base out to the tip, to bring the instrument to it. Because the solver only ever produces rotations, link lengths hold by construction — nothing stretches.
+- **Unity Hub**
+- **Unity 6000.4.0f1** (Unity Hub will offer to install it if you don't have it)
+- A few gigabytes of free disk space, because Unity builds a cache the first time it opens the project
 
-![Target ball IK goal tracking and FABRIK chain solving across the arm's joints](images/target-ball-ik.png)
+**Steps**
 
-- **Console driving** — `DaVinciArmConsole` moves an arm's IK target from the console controls, and steps aside the moment someone grabs the target directly, so the hand and the console never fight over it.
-- **Reset** — `NetworkedPoseReset` returns a target ball to its starting point, which walks its arm home with it.
-- **Pause** — `DaVinciPauseControl` freezes the machine and everything reading from it on a controller button.
+1. At the top of this page, click the green **Code** button, then **Download ZIP**.
+2. Unzip the file. You'll get a folder called **Da-Vinci-main**.
+3. Open **Unity Hub**, click **Add**, then **Add project from disk**.
+4. Choose the **Da-Vinci-main** folder.
+5. Click the project in Unity Hub to open it. The first time takes several minutes while Unity imports everything.
+6. In the **Project** window, go to **Assets › Scenes** and double-click **SampleScene**.
+7. Press **Play**.
 
-### Console levers and dial
+**Using a Quest?** Connect it to your computer with Quest Link before you press Play.
 
-The two control types are deliberately different, because they mean different things:
+**No headset?** In the **Hierarchy**, click **XR Device Simulator**, then tick the checkbox next to its name at the top of the **Inspector**. Press Play and you can move around with the keyboard and mouse.
 
-![Lever rate control versus dial position control on the surgeon console](images/input-control.png)
-
-- **Lever — rate control** (`LeverDrivenRotator`). A lever names a *direction*. The joint travels toward that end at a fixed speed and stops at its limit. It holds position whenever the lever isn't being held, so an arm can be parked mid-travel.
-- **Dial — position control** (`KnobDrivenRotator`). A dial names an *angle*. Its value maps straight onto the joint's rotation.
-
-Neither contains networking code. The networked lever and dial already replicate their own value, and every client derives the same joint angle from it — so there is one source of truth rather than two that can disagree. Both write their rotation in `LateUpdate`, after the rigging graph has run, and both recompose from the captured rest pose each frame so the joint never drifts over a long session.
-
-### Endoscopic view
-
-A camera is parented to the instrument tip and renders into a RenderTexture that a monitor in front of the surgeon console displays (`EndoscopeCamera`).
-
-![Endoscope camera on the arm tip streaming to the console monitor](images/endoscopic-view.png)
-
-- A 5 mm near clip — a real endoscope works centimetres from tissue.
-- Single-eye rendering, so the feed isn't drawn twice for VR.
-- The monitor lives on the UI layer, which the endoscope doesn't render — otherwise the camera would film its own screen.
-- The feed refreshes at 30 Hz to protect the Quest's frame budget; it's a third full render on top of both eyes.
-
-### Instrument swapping
-
-The arm tip carries a coupling built on XR Interaction Toolkit's `XRSocketInteractor` (`DaVinciInstrumentMount`). It accepts only objects marked as surgical instruments (`DaVinciInstrument`) and ignores everything else in the room. The socket holds the actual tool — nothing is destroyed or spawned — and the arm's fixed forceps is hidden while a tool is seated. Each tool seats by a mount point at its handle end; tools that miss the coupling fall under gravity.
-
-![Instrument tray with modular coupling at the arm tip](images/tool-swapping.png)
-
-### Telemetry and visualisation
-
-- **`DaVinciTelemetryGraph`** — scrolling speed and distance charts per arm. Drawn into a single `Texture2D` rather than as UI meshes, so ten traces cost the same as two, and backed by a fixed-size ring buffer so a long session never grows its memory.
-- **`JointAngleVisual`** — an angle wedge in each joint's own plane of rotation, labelled in degrees.
-- **`DaVinciIkChainVisualizer`** — the solved chain as a skeleton, with the line from tip to target.
-- **`TipForceVisual`** — an arrow at each instrument tip showing which way and how hard it's being driven.
-- **`DaVinciJointPalette`** — one colour per joint, shared by the charts and the wedges, so a trace and its joint are the same colour.
-
-### Patient
-
-The patient moves between two authored poses — asleep, and sitting up in bed — through an Animator crossfade (`HumanoidPoseLibrary`), driven by the Resting and Wake Up buttons on the bedside panel. Each hand can be grabbed and repositioned: a `TwoBoneIKConstraint` bends the shoulder and elbow to follow, so the mesh doesn't stretch (`GrabbableLimbIK`). The constraint only engages while a hand is held, leaving the pose animation in charge the rest of the time.
-
-![Patient sleep-to-awake pose transition and grabbable limb IK](images/patient-ik.png)
-
-### Environment
-
-The hospital room ships on the Built-in render pipeline; its 70 materials were converted to URP Lit, remapping textures, normal maps, emission and transparency so the room renders correctly under URP.
-
----
-
-## Getting started
-
-**Requirements**
-
-- Unity **6000.4.0f1** (install the exact version through Unity Hub)
-- Android Build Support, for a Quest build
-- **Git LFS** — models, textures and audio are stored with LFS
-
-**Clone**
+**Models missing, or the room looks untextured?** The download didn't include the large files (3D models, textures and sounds). Download the project with Git instead:
 
 ```bash
 git lfs install
 git clone https://github.com/ZaidKamil1574/Da-Vinci.git
 ```
 
-Cloning without Git LFS gives you small pointer files in place of every model and texture, and the scene will open with missing or pink assets. If that happens, run `git lfs pull` inside the repository.
-
-**Run**
-
-1. Add the folder in Unity Hub and open it with 6000.4.0f1. The first import takes several minutes.
-2. Open `Assets/Scenes/SampleScene.unity` — the only scene in the build.
-3. Press Play with a Quest connected over Quest Link, or use the XR Interaction Toolkit's XR Device Simulator to drive it with mouse and keyboard.
-4. To build for Quest, switch the platform to Android and build `SampleScene`.
+Then add the new **Da-Vinci** folder in Unity Hub, starting from step 3.
 
 ---
 
-## Project layout
+## What you can do
+
+- Grab one of the floating balls and the robot arm reaches for it.
+- Use the levers and the dial on the surgeon's console to move the arm joints.
+- Watch the live camera view from the tip of an instrument on the console screen.
+- Pick up tweezers, clamps or a scalpel from the tray and attach them to the end of an arm.
+- See live charts of how fast and how far each arm is moving.
+- Press **Wake Up** to make the patient sit up in bed, and grab their hands to move them.
+- Press the **A** button on the controller to pause everything.
+
+---
+
+## How it works
+
+### Moving the robot arms
+
+Each arm is a chain of joints. It uses Unity's Animation Rigging `ChainIKConstraint`, with one of the floating balls as its target. Every frame, the solver works out how to rotate each joint so the tip of the arm reaches the ball. It only rotates the joints, so the arm segments never stretch.
+
+![Target ball IK goal tracking and FABRIK chain solving across the arm's joints](images/target-ball-ik.png)
+
+The console can move the balls too (`DaVinciArmConsole`). If someone grabs a ball while the console is moving it, the console lets go so the two don't fight over it. A reset button on the console sends the balls back to where they started, and the arms follow.
+
+### The levers and the dial
+
+The lever and the dial work differently on purpose.
+
+- **The lever** moves a joint at a steady speed while you hold it, and stops when you let go. That means you can park the arm anywhere, not just at the ends of its range. (`LeverDrivenRotator`)
+- **The dial** sets the angle directly. Turn it halfway and the joint goes halfway. (`KnobDrivenRotator`)
+
+![Lever rate control versus dial position control on the surgeon console](images/input-control.png)
+
+In multiplayer, only the position of the lever or dial is sent over the network. Each player's computer works out the joint angle from that, so everyone always sees the arm in the same place.
+
+### The endoscope camera
+
+A camera sits on the tip of one instrument and moves with the arm. It draws what it sees onto a texture, and a screen at the surgeon's console shows that texture. (`EndoscopeCamera`)
+
+![Endoscope camera on the arm tip streaming to the console monitor](images/endoscopic-view.png)
+
+A few details that make it work:
+
+- It can see things very close to the lens, down to 5 mm, like a real endoscope.
+- It updates 30 times a second instead of every frame, to keep the Quest running smoothly.
+- It can't see its own screen. Otherwise it would film the screen showing itself, and you'd get an endless tunnel of screens.
+
+### Swapping tools
+
+The end of the arm has a socket. Pick up a tool from the tray, bring it close, and it clicks into place and moves with the arm. Pull it back out to swap it for another one. The socket only accepts surgical tools, and a tool you drop that misses the socket falls to the floor. (`DaVinciInstrumentMount`, `DaVinciInstrument`)
+
+![Instrument tray with modular coupling at the arm tip](images/tool-swapping.png)
+
+### Charts and visual guides
+
+- Live charts of each arm's speed and distance over time (`DaVinciTelemetryGraph`).
+- A marker on each joint showing how far it has turned, in degrees.
+- A line from each arm's tip to its target, and an arrow showing which way the tip is being pushed.
+
+The charts and the joint markers use the same colours, so you can match a line on a chart to the joint it belongs to.
+
+### The patient
+
+The patient has two poses: asleep, and sitting up in bed. The **Resting** and **Wake Up** buttons next to the bed switch between them with a smooth animation. (`HumanoidPoseLibrary`)
+
+You can also grab the patient's hands. The shoulder and elbow bend to follow your hand, so the arm moves naturally instead of stretching. (`GrabbableLimbIK`)
+
+![Patient sleep-to-awake pose transition and grabbable limb IK](images/patient-ik.png)
+
+### The hospital room
+
+The hospital room asset was made for Unity's older render pipeline, so at first everything in it showed up bright pink. I converted all 70 of its materials to URP so it displays properly.
+
+---
+
+## Editor tools
+
+Setting up this scene by hand means dragging a lot of references around a very deep hierarchy, so I wrote menu commands to do it. They're all safe to run again.
+
+| Menu | What it does |
+|---|---|
+| **Tools › Da Vinci › Set Up Console And Angle Readouts** | Builds the console panel, the charts and the joint angle markers. |
+| **Tools › Da Vinci › Set Up Endoscope View** | Puts the camera on the arm tip and builds the screen at the console. |
+| **Tools › Da Vinci › Set Up Instrument Swapping** | Adds the socket to the arm tip and makes the tray tools grabbable. |
+| **Tools › Da Vinci › Flip Instrument Mount** | Turns a tool around if it attaches upside down. |
+| **Tools › Da Vinci › Patient Poses › Build Transition From Two Objects** | Turns two posed copies of a character into the asleep and awake animations. |
+| **Tools › Da Vinci › Patient Poses › Wire Patient Buttons To This Character** | Connects the Resting and Wake Up buttons to the patient. |
+| **Tools › Da Vinci › Patient Poses › Make Right / Left Hand Grabbable** | Lets you grab and move one of the patient's hands. |
+| **GameObject › Da Vinci › Create Chain IK For Selection** | Sets up arm movement for the selected robot arm. |
+| **GameObject › Da Vinci › Validate Rig Setup** | Checks the robot arms for missing or broken setup. |
+
+---
+
+## Where things are
 
 ```
 Assets/
 ├── DaVinci/
-│   ├── Scripts/            all project code (below)
-│   └── Generated/          baked pose clips, animator controllers, the endoscope RenderTexture
+│   ├── Scripts/        all of my code
+│   └── Generated/      the patient animations and the endoscope texture
 ├── Scenes/SampleScene.unity
-├── Hospital Room 2/        hospital environment (third-party, converted to URP)
-├── VR Body/                patient characters
-├── Da+Vinci.fbx            robot model
-├── Robotic Surgery Controller.FBX   surgeon console
-└── VRMPAssets/             Unity VR Multiplayer template
+├── Hospital Room 2/    the hospital room
+├── VR Body/            the patient characters
+├── Da+Vinci.fbx        the robot
+└── Robotic Surgery Controller.FBX    the surgeon's console
 ```
 
-```
-Assets/DaVinci/Scripts/
-├── Controls/        LeverDrivenRotator, KnobDrivenRotator, DaVinciPauseControl, NetworkedPoseReset
-├── Endoscope/       EndoscopeCamera
-├── Instruments/     DaVinciInstrument, DaVinciInstrumentMount
-├── Patient/         HumanoidPoseLibrary, GrabbableLimbIK, PatientPoseController, PatientLimbHandle
-├── UI/              DaVinciTelemetryGraph, DaVinciControlPanel, FaceViewer
-├── Visualization/   JointAngleVisual, JointMotionTracker, DaVinciIkChainVisualizer, TipForceVisual, DaVinciJointPalette
-├── Editor/          scene-setup tooling (below)
-├── DaVinciArm.cs, CcdSolver.cs, RevoluteJoint.cs, DaVinciTrocarPort.cs, DaVinciArmGrabHandle.cs
-└── DaVinciArmConsole.cs, XRLever2D.cs
-```
+Inside `Assets/DaVinci/Scripts/`, the code is grouped by feature: `Controls`, `Endoscope`, `Instruments`, `Patient`, `UI`, `Visualization`, and `Editor` for the setup tools.
 
 ---
 
-## Editor tooling
+## Things I learned
 
-Scene wiring is done by editor commands rather than by hand, because the model's hierarchy is deep and the references are many. Every command can be re-run safely; each reuses what it finds.
-
-| Menu | What it does |
-|---|---|
-| **Tools ▸ Da Vinci ▸ Set Up Console And Angle Readouts** | Builds the console panel, telemetry charts and joint angle overlays. |
-| **Tools ▸ Da Vinci ▸ Set Up Endoscope View** | Mounts the camera on the arm tip, creates the RenderTexture and builds the console monitor. |
-| **Tools ▸ Da Vinci ▸ Set Up Instrument Swapping** | Fits the coupling to the arm tip and makes the tray tools grabbable instruments. |
-| **Tools ▸ Da Vinci ▸ Flip Instrument Mount** | Turns a tool's seat point half a turn, for a tool that seats upside down. |
-| **Tools ▸ Da Vinci ▸ Patient Poses ▸ Build Transition From Two Objects** | Reads two posed copies of a character into Sleeping and Waking clips on one character. |
-| **Tools ▸ Da Vinci ▸ Patient Poses ▸ Wire Patient Buttons To This Character** | Points the bedside Resting and Wake Up buttons at the patient. |
-| **Tools ▸ Da Vinci ▸ Patient Poses ▸ Make Right / Left Hand Grabbable** | Adds a two-bone IK arm and a grabbable hand target. |
-| **GameObject ▸ Da Vinci ▸ Create Chain IK For Selection** | Builds an Animation Rigging chain for the selected arm. |
-| **GameObject ▸ Da Vinci ▸ Validate Rig Setup** | Checks the arm rigs for missing or mis-wired constraints. |
+- **Only one thing should control each object.** Most of the bugs I hit came from two systems moving the same bone at slightly different times, for example an animation and an IK constraint. The fix was always to decide which one is in charge.
+- **Send the input, not the result.** In multiplayer, sending the lever position and letting each computer work out the arm's angle is simpler and more reliable than sending both.
+- **Grab a target, not a bone.** Dragging a bone directly stretches the character's mesh. Grabbing a target and letting IK bend the arm to reach it looks right.
+- **Look at the data before fixing anything.** The real causes usually turned up in the scene files or the animation data, not where I first guessed.
 
 ---
 
-## Engineering notes
+## Not finished yet
 
-A few principles that shaped the code, each learned the hard way on this project:
-
-- **One owner per transform.** Almost every bug here was two systems writing the same bone on different clocks — an animation clip, a rigging constraint and a script in `LateUpdate`. The fixes all came down to deciding who owns a value and making everything else read it.
-- **Replicate causes, derive effects.** Controls replicate their own value; each client computes the joint angle locally. Storing both would let them disagree.
-- **Grab a goal, not a bone.** Grabbable handles move IK *targets*. Moving a bone directly tears the skinned mesh and fights the animation system.
-- **Measure before fixing.** Root causes came from reading scene files, diffing baked animation curves and checking package source — not from guessing.
-
----
-
-## Status and known limitations
-
-- **A custom arm solver is built but not yet wired into the scene.** `CcdSolver` constrains each correction to its joint's own axis, so the arm can't reach a pose the real mechanism couldn't, and `DaVinciArm` adds a remote centre of motion that pins the instrument at the incision while the tip is aimed. The scene currently runs on Animation Rigging's `ChainIKConstraint`, which treats every joint as a ball joint and has no remote centre. Swapping over means retiring the chain constraints so the two solvers don't compete.
-- The arms are kinematic: instruments pass through tissue rather than meeting resistance.
-- The patient transition is a two-pose crossfade — convincing for sitting up, not for motion involving weight shift or contact.
-- Motion scaling and tremor filtering, which define how the real console feels, aren't implemented yet.
-- The robot model is present twice in the scene, doubling the IK cost; one copy should be removed.
+- I've written a custom arm solver (`CcdSolver` and `DaVinciArm`) that keeps each joint turning only on its real axis, and keeps the instrument pivoting around the incision point like the real robot does. It isn't connected to the scene yet, so the arms still use Unity's built-in solver.
+- The instruments pass straight through the patient. There's no physical contact yet.
+- Waking up is a blend between two poses rather than a fully animated movement.
+- The real console scales down the surgeon's hand movements and filters out hand tremor. Neither is added yet.
+- The robot model is in the scene twice, which doubles the work for the arm movement. One copy should be removed.
 
 ---
 
-## Third-party assets and credits
+## Built with
 
-This repository includes assets created by others, used under their respective licences:
+Unity 6000.4.0f1 · Universal Render Pipeline 17.4 · OpenXR · XR Interaction Toolkit 3.4 · Animation Rigging 1.4 · Netcode for GameObjects 2.10
 
-- **Hospital environment** — *Hospital Room 2*, © 2022 3D Everything, from the Unity Asset Store. Converted to URP for this project.
-- **Patient characters** — Mixamo, Adobe.
-- **VR multiplayer foundation** — Unity VR Multiplayer template and XR Interaction Toolkit samples, Unity Technologies.
-- **VR body IK scripts** (`IKTargetFollowVRRig`, `IKFootSolver`) — adapted from third-party tutorial code.
-- **Robot, surgeon console and surgical system models** — third-party 3D models, used under their original terms.
+## Credits
 
-The Da Vinci name refers to the Intuitive Surgical system this project simulates for training purposes; the project is not affiliated with Intuitive Surgical.
+This project uses assets made by other people, under their own licences:
+
+- **Hospital room**: *Hospital Room 2* by 3D Everything, from the Unity Asset Store.
+- **Patient characters**: Mixamo, by Adobe.
+- **Multiplayer setup**: Unity's VR Multiplayer template and XR Interaction Toolkit samples.
+- **VR body IK scripts** (`IKTargetFollowVRRig`, `IKFootSolver`): adapted from tutorial code.
+- **Robot, console and surgical system models**: third-party 3D models, used under their original terms.
+
+"Da Vinci" refers to the Intuitive Surgical system this project simulates for training. This project is not affiliated with Intuitive Surgical.
